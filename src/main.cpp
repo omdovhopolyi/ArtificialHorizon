@@ -5,6 +5,10 @@
 #define MPU9250_IMU_ADDRESS 0x68 
 #define MAGNETIC_DECLINATION 1.63 // To be defined by user 
 #define INTERVAL_MS_PRINT 100
+#define RX_PIN 18
+#define TX_PIN 17
+#define SDA_PIN 8
+#define SCL_PIN 9
 
 unsigned long lastPrintMillis = 0; 
 
@@ -18,8 +22,8 @@ MPU9250 mpu;
 
 void setup() {
   	Serial.begin(115200);
-  	Serial1.begin(115200, SERIAL_8N1, 18, 17);
-  	Wire.begin(8, 9);
+  	Serial1.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
+  	Wire.begin(SDA_PIN, SCL_PIN);
 
 	MPU9250Setting setting;
 	// Sample rate must be at least 2x DLPF rate 
