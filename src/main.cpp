@@ -4,70 +4,58 @@
 
 #define MPU9250_IMU_ADDRESS 0x68 
 #define MAGNETIC_DECLINATION 1.63 // To be defined by user 
-#define INTERVAL_MS_PRINT 1000 
+#define INTERVAL_MS_PRINT 100
 
 unsigned long lastPrintMillis = 0; 
+
+struct TelemetryPacket {
+	float pitch = 0.f;
+	float roll = 0.f;
+	unsigned long timestamp = 0L;
+};
 
 MPU9250 mpu;
 
 void setup() {
-  Serial.begin(115200);
-  Serial1.begin(115200, SERIAL_8N1, 18, 17);
-  Wire.begin(8, 9);
+  	Serial.begin(115200);
+  	Serial1.begin(115200, SERIAL_8N1, 18, 17);
+  	Wire.begin(8, 9);
 
-  MPU9250Setting setting; 
-	 // Sample rate must be at least 2x DLPF rate 
-	 setting.accel_fs_sel = ACCEL_FS_SEL::A16G; 
-	 setting.gyro_fs_sel = GYRO_FS_SEL::G1000DPS; 
-	 setting.mag_output_bits = MAG_OUTPUT_BITS::M16BITS; 
-	 setting.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_250HZ; 
-	 setting.gyro_fchoice = 0x03; 
-	 setting.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_20HZ; 
-	 setting.accel_fchoice = 0x01; 
-	 setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_45HZ; 
-	 mpu.setup(MPU9250_IMU_ADDRESS, setting); 
-	 mpu.setMagneticDeclination(MAGNETIC_DECLINATION); 
-	 mpu.selectFilter(QuatFilterSel::MADGWICK); 
-	 mpu.setFilterIterations(15); 
-	 Serial.println("Calibration will start in 5sec."); 
-	 Serial.println("Please leave the device still on the flat plane."); 
-	 delay(5000); 
-	 Serial.println("Calibrating..."); 
-	 mpu.calibrateAccelGyro(); 
-	 Serial.println("Magnetometer calibration will start in 5sec."); 
-	 Serial.println("Please Wave device in a figure eight until done."); 
-	 delay(5000); 
-	 Serial.println("Calibrating..."); 
-	 mpu.calibrateMag(); 
-	 Serial.println("Ready!"); 
-
+	MPU9250Setting setting;
+	// Sample rate must be at least 2x DLPF rate 
+	setting.accel_fs_sel = ACCEL_FS_SEL::A16G;
+	setting.gyro_fs_sel = GYRO_FS_SEL::G1000DPS;
+	setting.mag_output_bits = MAG_OUTPUT_BITS::M16BITS;
+	setting.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_250HZ;
+	setting.gyro_fchoice = 0x03;
+	setting.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_20HZ;
+	setting.accel_fchoice = 0x01;
+	setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_45HZ;
+	mpu.setup(MPU9250_IMU_ADDRESS, setting);
+	mpu.setMagneticDeclination(MAGNETIC_DECLINATION);
+	mpu.selectFilter(QuatFilterSel::MADGWICK);
+	mpu.setFilterIterations(15);
+	Serial.println("Please leave the device still on the flat plane."); 
+	Serial.println("Calibrating...");
+	mpu.calibrateAccelGyro();
+	Serial.println("Ready!");
 }
 
 void loop() {
-  
-  mpu.update();
-  unsigned long currentMillis = millis(); 
-	 if (mpu.update() && currentMillis - lastPrintMillis > INTERVAL_MS_PRINT) { 
-	   //Serial.print("TEMP:\\t"); 
-	   //Serial.print(mpu.getTemperature(), 2); 
-	   //Serial.print("\\xC2\\xB0"); //Print degree symbol 
-	   //Serial.print("C"); 
-	   //Serial.println(); 
-	   //Serial.print("Pitch:\\t"); 
-	   Serial1.print(mpu.getPitch());
-     Serial.println(mpu.getPitch());  
-	   //Serial.print("\\xC2\\xB0"); //Print degree symbol 
-	   //Serial.println(); 
-	   //Serial.print("Roll:\\t"); 
-	   Serial1.print(mpu.getRoll());
-     Serial.println(mpu.getRoll());  
-	   //Serial.print("\\xC2\\xB0"); //Print degree symbol 
-	   //Serial.println(); 
-	   //Serial.print("Yaw:\\t"); 
-	   Serial1.print(mpu.getYaw());  
-	   //Serial.print("\\xC2\\xB0"); //Print degree symbol 
-	   //Serial.println(); 
-	   //Serial.println(); 
-	   //lastPrintMillis = currentMillis; 
-	 }
+	mpu.update();
+	unsigned long now = millis(); 
+	if (mpu.update() && now - lastPrintMillis > INTERVAL_MS_PRINT) { 
+		Serial.print(mpu.getPitch());
+		Serial.print(' ');
+		Serial.println(mpu.getRoll());   
+
+		TelemetryPacket packet;
+		packet.pitch = mpu.getPitch();
+		packet.roll = mpu.getRoll();
+		packet.timestamp = now;
+
+		Serial1.write(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet));
+
+		lastPrintMillis = now; 
+	}
 }
