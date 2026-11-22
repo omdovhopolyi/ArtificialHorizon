@@ -161,7 +161,9 @@ void setup() {
 // 		0.3f    // Scale Y
 // )	;	
 
-    sprite.pushSprite(0, 0);
+	sprite.setPivot(sprite.width() / 2, sprite.height() / 2);
+
+    //sprite.pushSprite(0, 0);
 
 	// lcd.drawPngFile(
     //     LittleFS,
@@ -179,12 +181,18 @@ void setup() {
 }
 
 void loop() {
+	static uint8_t pixPer10Degrees = 10;
+	static float pitchReal = 0.f;
+
+
 	mpu.update();
 	unsigned long now = millis(); 
 	if (mpu.update() && now - lastPrintMillis > INTERVAL_MS_PRINT) { 
 		Serial.print(mpu.getPitch());
 		Serial.print(' ');
 		Serial.println(mpu.getRoll());   
+
+		pitchReal = mpu.getRoll();
 
 		TelemetryPacket packet;
 		packet.pitch = mpu.getPitch();
@@ -194,8 +202,14 @@ void loop() {
 		Serial1.write(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet));
 
 		lastPrintMillis = now; 
+
+		auto pitch = mpu.getPitch() / 10.f * pixPer10Degrees;
+		pitch = std::max(std::min(pitch, 25.f), -25.f);
+		sprite.setPivot(sprite.getPivotX(), sprite.height() / 2 - pitch);
+		sprite.pushRotateZoom(
+			64, 64,
+			mpu.getRoll(),
+			1.5f, 1.5f
+		);
 	}
-
-	//sprite.pushSprite(0, 0);
-
 }
