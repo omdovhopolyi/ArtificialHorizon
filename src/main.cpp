@@ -55,7 +55,9 @@ public:
 };
 
 LGFX lcd;
-LGFX_Sprite sprite(&lcd);
+LGFX_Sprite spriteBackground(&lcd);
+LGFX_Sprite spriteTarget(&lcd);
+LGFX_Sprite buffer(&lcd);
 
 unsigned long lastPrintMillis = 0; 
 
@@ -102,88 +104,33 @@ void setup() {
 
 	lcd.init();
     lcd.setRotation(0);
-	lcd.setColorDepth(8);
+	lcd.setColorDepth(16);
 
-	
-
-    if (!sprite.createSprite(196, 197))
+    if (!spriteBackground.createSprite(196, 197))
     {
         Serial.println("Sprite allocation failed!");
-        while (true) {};
+        while (true) {}
     }
+	if (!spriteTarget.createSprite(128, 128)) {
+		Serial.println("Target sprite allocation failed");
+		while (true) {}
+	}
+	if (!buffer.createSprite(128, 128)) {
+		Serial.println("Buffer sprite allocation failed");
+		while (true) {}
+	}
 
-	sprite.setColorDepth(8);
+	spriteBackground.setColorDepth(16);
+	spriteTarget.setColorDepth(16); // TODO
 
-    // sprite.fillScreen(TFT_BLACK);
+	bool result = spriteBackground.drawPngFile(LittleFS, "/ah_back_20.png");
+	result = spriteTarget.drawPngFile(LittleFS, "/ah_target.png");
 
-    // sprite.setTextColor(TFT_WHITE);
-    // sprite.setTextSize(2);
-    // sprite.drawString("Hello!", 20, 50);
-
-// lcd.drawPngFile(
-//     LittleFS,
-//     "/ah_back_20.png",
-//     0,
-//     0,
-//     0,
-//     0,
-//     1.0f,
-//     1.0f,
-//     0,
-//     100
-// );
-
-// sprite.setColorDepth(16);
-// sprite.createSprite(100, 100);
-
-// sprite.fillScreen(TFT_RED);
-// sprite.fillRect(0, 0, 50, 50, TFT_GREEN);
-// sprite.fillRect(50, 50, 50, 50, TFT_BLUE);
-
-// sprite.pushSprite(0, 0);
-
-//prite.drawPngFile("/ah_back_2.png");
-
-	const bool result = sprite.drawPngFile(
-		LittleFS,
-		"/ah_back_20.png",
-		0,
-		0
-	);
-
-// 	Serial.printf("PNG result: %d\n", result);
-
-// 	sprite.pushRotateZoom(
-// 		0,     // Destination center X
-// 		0,     // Destination center Y
-// 		0.f,  // Rotation angle
-// 		0.3f,   // Scale X
-// 		0.3f    // Scale Y
-// )	;	
-
-	sprite.setPivot(sprite.width() / 2, sprite.height() / 2);
-
-    //sprite.pushSprite(0, 0);
-
-	// lcd.drawPngFile(
-    //     LittleFS,
-    //     "/ah_back_20.png",
-    //     0,
-    //     0,
-	// 	128,
-	// 	128
-    // );
-
-    // lcd.fillScreen(TFT_GREEN);
-	// lcd.setTextColor(TFT_WHITE);
-    // lcd.setTextSize(2);
-    // lcd.drawString("Hello!", 20, 50);
+	spriteBackground.setPivot(spriteBackground.width() / 2, spriteBackground.height() / 2);
 }
 
 void loop() {
 	static uint8_t pixPer10Degrees = 10;
-	static float pitchReal = 0.f;
-
 
 	mpu.update();
 	unsigned long now = millis(); 
@@ -191,8 +138,6 @@ void loop() {
 		Serial.print(mpu.getPitch());
 		Serial.print(' ');
 		Serial.println(mpu.getRoll());   
-
-		pitchReal = mpu.getRoll();
 
 		TelemetryPacket packet;
 		packet.pitch = mpu.getPitch();
@@ -203,13 +148,16 @@ void loop() {
 
 		lastPrintMillis = now; 
 
-		auto pitch = mpu.getPitch() / 10.f * pixPer10Degrees;
-		pitch = std::max(std::min(pitch, 25.f), -25.f);
-		sprite.setPivot(sprite.getPivotX(), sprite.height() / 2 - pitch);
-		sprite.pushRotateZoom(
-			64, 64,
-			mpu.getRoll(),
-			1.5f, 1.5f
-		);
+		if (!lcd.dmaBusy()) {
+			lcd.startWrite();
+			buffer.fillSprite(TFT_BLACK);
+			auto pitch = mpu.getPitch() / 10.f * pixPer10Degrees;
+			pitch = std::max(std::min(pitch, 45.f), -45.f);
+			spriteBackground.setPivot(spriteBackground.getPivotX(), spriteBackground.height() / 2 - pitch);
+			spriteBackground.pushRotateZoom(&buffer, 64, 64, -mpu.getRoll(), 1.5f, 1.5f);
+			spriteTarget.pushSprite(&buffer, 0, 0, TFT_BLACK);
+			buffer.pushSprite(0, 0);
+			lcd.endWrite();
+		}
 	}
 }
