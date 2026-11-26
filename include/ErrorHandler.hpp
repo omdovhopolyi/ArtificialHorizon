@@ -1,0 +1,1 @@
+#define ErrorHandler(msg) Serial.println(#msg); while (true) {}

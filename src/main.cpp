@@ -1,70 +1,24 @@
 #include <Arduino.h>
 #include <MPU9250.h>
 #include <Wire.h>
-#include <LittleFS.h>
-#include <LovyanGFX.hpp>
 
-#define MPU9250_IMU_ADDRESS 0x68 
-#define MAGNETIC_DECLINATION 1.63 // To be defined by user 
+#include "Display.hpp"
+
+#define MPU9250_IMU_ADDRESS 0x68
 #define INTERVAL_MS_PRINT 100
 #define RX_PIN 18
 #define TX_PIN 17
 #define SDA_PIN 8
 #define SCL_PIN 9
 
-class LGFX : public lgfx::LGFX_Device
-{
-    lgfx::Panel_ST7735S _panel;
-    lgfx::Bus_SPI _bus;
-
-public:
-    LGFX()
-    {
-        auto bus_cfg = _bus.config();
-
-        bus_cfg.spi_host = SPI2_HOST;
-        bus_cfg.spi_mode = 0;
-        bus_cfg.freq_write = 27000000;
-        bus_cfg.spi_3wire = true;
-
-        bus_cfg.pin_sclk = 12;
-        bus_cfg.pin_mosi = 11;
-        bus_cfg.pin_miso = -1;
-        bus_cfg.pin_dc = 7;
-
-        _bus.config(bus_cfg);
-        _panel.setBus(&_bus);
-
-        auto panel_cfg = _panel.config();
-
-        panel_cfg.pin_cs = 10;
-        panel_cfg.pin_rst = 6;
-
-        panel_cfg.panel_width = 128;
-        panel_cfg.panel_height = 128;
-
-        panel_cfg.offset_x = 0;
-        panel_cfg.offset_y = 0;
-
-        panel_cfg.invert = false;
-        panel_cfg.rgb_order = false;
-
-        _panel.config(panel_cfg);
-        setPanel(&_panel);
-    }
-};
-
-LGFX lcd;
-LGFX_Sprite spriteBackground(&lcd);
-LGFX_Sprite spriteTarget(&lcd);
-LGFX_Sprite buffer(&lcd);
+Display display;
 
 unsigned long lastPrintMillis = 0; 
 
 struct TelemetryPacket {
 	float pitch = 0.f;
 	float roll = 0.f;
-	unsigned long timestamp = 0L;
+	uint32_t timestamp = 0UL;
 };
 
 MPU9250 mpu;
@@ -73,15 +27,6 @@ void setup() {
   	Serial.begin(115200);
   	Serial1.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
   	Wire.begin(SDA_PIN, SCL_PIN);
-	
-
-	if (!LittleFS.begin(false)) {
-		Serial.println("Failed to init little fs");
-		while (true) {};
-	}
-	else {
-		Serial.println("Little fs initialized successfuly");
-	}
 
 	MPU9250Setting setting;
 	// Sample rate must be at least 2x DLPF rate 
@@ -94,70 +39,37 @@ void setup() {
 	setting.accel_fchoice = 0x01;
 	setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_45HZ;
 	mpu.setup(MPU9250_IMU_ADDRESS, setting);
-	mpu.setMagneticDeclination(MAGNETIC_DECLINATION);
 	mpu.selectFilter(QuatFilterSel::MADGWICK);
 	mpu.setFilterIterations(15);
 	Serial.println("Please leave the device still on the flat plane."); 
 	Serial.println("Calibrating...");
-	//mpu.calibrateAccelGyro();
+	mpu.calibrateAccelGyro();
 	Serial.println("Ready!");
 
-	lcd.init();
-    lcd.setRotation(0);
-	lcd.setColorDepth(16);
-
-    if (!spriteBackground.createSprite(196, 197))
-    {
-        Serial.println("Sprite allocation failed!");
-        while (true) {}
-    }
-	if (!spriteTarget.createSprite(128, 128)) {
-		Serial.println("Target sprite allocation failed");
-		while (true) {}
-	}
-	if (!buffer.createSprite(128, 128)) {
-		Serial.println("Buffer sprite allocation failed");
-		while (true) {}
-	}
-
-	spriteBackground.setColorDepth(16);
-	spriteTarget.setColorDepth(16); // TODO
-
-	bool result = spriteBackground.drawPngFile(LittleFS, "/ah_back_20.png");
-	result = spriteTarget.drawPngFile(LittleFS, "/ah_target.png");
-
-	spriteBackground.setPivot(spriteBackground.width() / 2, spriteBackground.height() / 2);
+	display.Init();
 }
 
 void loop() {
-	static uint8_t pixPer10Degrees = 10;
-
-	mpu.update();
 	unsigned long now = millis(); 
-	if (mpu.update() && now - lastPrintMillis > INTERVAL_MS_PRINT) { 
+	mpu.update();
+	
+	if (now - lastPrintMillis > INTERVAL_MS_PRINT) { 
 		Serial.print(mpu.getPitch());
 		Serial.print(' ');
-		Serial.println(mpu.getRoll());   
+		Serial.println(mpu.getRoll());
+
+		const float pitch = mpu.getPitch();
+		const float roll = mpu.getRoll();
 
 		TelemetryPacket packet;
-		packet.pitch = mpu.getPitch();
-		packet.roll = mpu.getRoll();
+		packet.pitch = pitch;
+		packet.roll = roll;
 		packet.timestamp = now;
 
 		Serial1.write(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet));
 
 		lastPrintMillis = now; 
 
-		if (!lcd.dmaBusy()) {
-			lcd.startWrite();
-			buffer.fillSprite(TFT_BLACK);
-			auto pitch = mpu.getPitch() / 10.f * pixPer10Degrees;
-			pitch = std::max(std::min(pitch, 45.f), -45.f);
-			spriteBackground.setPivot(spriteBackground.getPivotX(), spriteBackground.height() / 2 - pitch);
-			spriteBackground.pushRotateZoom(&buffer, 64, 64, -mpu.getRoll(), 1.5f, 1.5f);
-			spriteTarget.pushSprite(&buffer, 0, 0, TFT_BLACK);
-			buffer.pushSprite(0, 0);
-			lcd.endWrite();
-		}
+		display.Update(pitch, roll);
 	}
 }
