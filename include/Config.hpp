@@ -9,6 +9,8 @@ struct Config
 
     static constexpr uint8_t PinRX = 18;
     static constexpr uint8_t PinTX = 17;
+    static constexpr unsigned long UARTBaud = 115200;
+
     static constexpr uint8_t PinSDA = 8;
     static constexpr uint8_t PinSCL = 9;
 
