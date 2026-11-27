@@ -4,35 +4,38 @@
 #include <LittleFS.h>
 #include <LovyanGFX.hpp>
 
-struct TelemetryData;
-
-class LGFX : public lgfx::LGFX_Device
+namespace ah
 {
-public:
-    LGFX();
+    struct TelemetryData;
 
-private:
-    lgfx::Panel_ST7735S _panel;
-    lgfx::Bus_SPI _bus;
-};
+    class LGFX : public lgfx::LGFX_Device
+    {
+    public:
+        LGFX();
 
-class Display
-{
-public:
-    Display();
+    private:
+        lgfx::Panel_ST7735S _panel;
+        lgfx::Bus_SPI _bus;
+    };
 
-    void Init();
+    class Display
+    {
+    public:
+        Display();
 
-    void HandleTelemetry(TelemetryData& data);
+        void Init();
 
-private:
-    void UpdateScreen(float pitch, float roll);
-    
-private:
-    LGFX _lcd;
-    LGFX_Sprite _spriteBackground;
-    LGFX_Sprite _spriteTarget;
-    LGFX_Sprite _buffer;
-};
+        void HandleTelemetry(TelemetryData& data);
+
+    private:
+        void UpdateScreen(float pitch, float roll);
+
+    private:
+        LGFX _lcd;
+        LGFX_Sprite _spriteBackground;
+        LGFX_Sprite _spriteTarget;
+        LGFX_Sprite _buffer;
+    };
+}
 
 #endif

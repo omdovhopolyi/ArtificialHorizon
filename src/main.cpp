@@ -6,9 +6,9 @@
 
 #define INTERVAL_MS_PRINT 100
 
-Connection connection;
-Display display;
-Telemetry telemetry;
+ah::Connection connection;
+ah::Display display;
+ah::Telemetry telemetry;
 
 unsigned long lastPrintMillis = 0; 
 
@@ -25,7 +25,7 @@ void loop() {
 	telemetry.Update();
 	
 	if (now - lastPrintMillis > INTERVAL_MS_PRINT) {
-		TelemetryData packet;
+		ah::TelemetryData packet;
 		telemetry.HandleTelemetry(packet);
 		display.HandleTelemetry(packet);
 		connection.HandleTelemetry(packet);

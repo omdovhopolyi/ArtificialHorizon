@@ -1,16 +1,16 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-struct TelemetryData;
-
-class Connection
+namespace ah
 {
-public:
-    void Init();
-    void HandleTelemetry(TelemetryData& data);
+    struct TelemetryData;
 
-private:
-
-};
+    class Connection
+    {
+    public:
+        void Init();
+        void HandleTelemetry(TelemetryData& data);
+    };
+}
 
 #endif
