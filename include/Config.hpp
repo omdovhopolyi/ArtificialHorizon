@@ -39,6 +39,9 @@ namespace ah
 
         static constexpr uint8_t MPU9250Address = 0x68;
         static constexpr uint8_t FilterIterations = 15;
+
+        static constexpr uint32_t TimerFrequency = 1000000;
+        static constexpr uint32_t TimerAlarmPeriod = 33333;
     };
 }
 

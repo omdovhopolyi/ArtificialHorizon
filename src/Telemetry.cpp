@@ -1,5 +1,6 @@
 #include "Telemetry.hpp"
 #include "Config.hpp"
+#include "TelemetryData.hpp"
 #include <Wire.h>
 
 namespace ah

@@ -3,16 +3,17 @@
 
 #include <Arduino.h>
 #include <MPU9250.h>
-#include "TelemetryData.hpp"
+#include "Component.hpp"
 
 namespace ah
 {
-    class Telemetry
+    class Telemetry final
+        : public Component
     {
     public:
-        void Init();
+        void Init() override;
         void Update();
-        void HandleTelemetry(TelemetryData& data);
+        void HandleTelemetry(TelemetryData& data) override;
 
     private:
         MPU9250 _mpu;

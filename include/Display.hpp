@@ -3,6 +3,7 @@
 
 #include <LittleFS.h>
 #include <LovyanGFX.hpp>
+#include "Component.hpp"
 
 namespace ah
 {
@@ -18,14 +19,14 @@ namespace ah
         lgfx::Bus_SPI _bus;
     };
 
-    class Display
+    class Display final
+        : public Component
     {
     public:
         Display();
 
-        void Init();
-
-        void HandleTelemetry(TelemetryData& data);
+        void Init() override;
+        void HandleTelemetry(TelemetryData& data) override;
 
     private:
         void UpdateScreen(float pitch, float roll);
