@@ -5,7 +5,6 @@
 
 struct Config
 {
-    static constexpr uint8_t MPU9250Address = 0x68;
     static constexpr unsigned long UpdateInterval = 100L;
 
     static constexpr uint8_t PinRX = 18;
@@ -33,6 +32,9 @@ struct Config
     static constexpr uint16_t BackgroundSpriteHeight = 197;
     static constexpr uint8_t BackgroundSpriteColorDepth = 16;
     static constexpr uint8_t TargetSpriteColorDepth = 16;
+
+    static constexpr uint8_t MPU9250Address = 0x68;
+    static constexpr uint8_t FilterIterations = 15;
 };
 
 #endif

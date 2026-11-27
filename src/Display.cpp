@@ -1,6 +1,7 @@
 #include "Display.hpp"
 #include "Config.hpp"
 #include "ErrorHandler.hpp"
+#include "TelemetryData.hpp"
 
 LGFX::LGFX()
 {
@@ -72,7 +73,12 @@ void Display::Init()
 	_spriteBackground.setPivot(_spriteBackground.width() / 2, _spriteBackground.height() / 2);
 }
 
-void Display::Update(float pitch, float roll)
+void Display::HandleTelemetry(TelemetryData& data)
+{
+    UpdateScreen(data.pitch, data.roll);
+}
+
+void Display::UpdateScreen(float pitch, float roll)
 {
     if (!_lcd.dmaBusy()) {
         _lcd.startWrite();

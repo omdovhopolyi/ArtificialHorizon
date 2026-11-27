@@ -4,6 +4,8 @@
 #include <LittleFS.h>
 #include <LovyanGFX.hpp>
 
+struct TelemetryData;
+
 class LGFX : public lgfx::LGFX_Device
 {
 public:
@@ -21,8 +23,11 @@ public:
 
     void Init();
 
-    void Update(float pitch, float roll);
+    void HandleTelemetry(TelemetryData& data);
 
+private:
+    void UpdateScreen(float pitch, float roll);
+    
 private:
     LGFX _lcd;
     LGFX_Sprite _spriteBackground;
