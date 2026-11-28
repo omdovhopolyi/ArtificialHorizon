@@ -16,8 +16,8 @@ namespace ah
         static constexpr uint8_t PinSDA = 8;
         static constexpr uint8_t PinSCL = 9;
 
-        static constexpr uint16_t PixPer10Degrees = 10;
-        inline static constexpr float PitchMax = 45.f;
+        static constexpr uint16_t PixPer10Degrees = 24;
+        inline static constexpr float PitchMax = 60.f;
         static constexpr float SpriteBackScale = 1.5f;
         
         static constexpr uint8_t PinSCLK = 12;
