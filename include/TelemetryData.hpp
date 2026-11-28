@@ -7,7 +7,6 @@ namespace ah
 {
     struct TelemetryData
     {
-        uint16_t header = 0xAA55;
         float pitch = 0.f;
         float roll = 0.f;
         uint32_t timestamp = 0UL;

@@ -1,6 +1,7 @@
 #include "RoundRobinScheduler.hpp"
 #include "Config.hpp"
 #include "ErrorHandler.hpp"
+#include <esp_arduino_version.h>
 
 namespace ah
 {
@@ -16,6 +17,11 @@ namespace ah
     {
         UpdateEveryTickComponents();
         UpdateComponentsByIndex();
+    }
+
+    void RoundRobinScheduler::OnReset()
+    {
+        _connection.HandleReset();
     }
 
     void RoundRobinScheduler::GatherComponents()
@@ -58,8 +64,15 @@ namespace ah
 
     void RoundRobinScheduler::InitTimer()
     {
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
         _timer = timerBegin(Config::TimerFrequency);
         timerAttachInterrupt(_timer, &RoundRobinScheduler::OnTimer);
         timerAlarm(_timer, Config::TimerAlarmPeriod, true, 0);
+#else
+        _timer = timerBegin(0, 80, true);
+        timerAttachInterrupt(_timer, &RoundRobinScheduler::OnTimer, true);
+        timerAlarmWrite(_timer, Config::TimerAlarmPeriod, true);
+        timerAlarmEnable(_timer);
+#endif
     }
 }

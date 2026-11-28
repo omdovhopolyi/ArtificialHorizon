@@ -17,6 +17,8 @@ namespace ah
         void Init();
         void Update();
 
+        void OnReset();
+
     private:
         void GatherComponents();
         void InitTimer();
